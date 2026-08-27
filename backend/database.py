@@ -3,7 +3,6 @@ from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
-# 1. Load .env file explicitly
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -16,7 +15,6 @@ DEFAULT_URL = "postgresql://postgres:123456@localhost:5432/task_management_db"
 raw_url = os.getenv("DATABASE_URL")
 DATABASE_URL = str(raw_url).strip() if raw_url and raw_url != "None" else DEFAULT_URL
 
-# 3. PostgreSQL Engine Setup
 engine = create_engine(
     DATABASE_URL,
     pool_size=10,

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import { 
   ArrowLeft, 
   MessageSquare, 
@@ -9,13 +10,23 @@ import {
   AlertCircle 
 } from 'lucide-react';
 import { getTaskById, updateTask, deleteTask, addTaskComment, getUsers } from '../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Select';
 import { PriorityBadge, StatusBadge } from '../ui/PriorityBadge';
 
+const showAlert = (options) => Swal.fire({
+  background: document.documentElement.classList.contains('dark') ? '#000000' : '#ffffff',
+  color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+  confirmButtonColor: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+  ...options,
+});
+
 export const TaskDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canDeleteTasks = user?.role === 'admin';
 
   const [task, setTask] = useState(null);
   const [users, setUsers] = useState([]);
@@ -23,7 +34,6 @@ export const TaskDetail = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  // Editable Form State
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -33,7 +43,6 @@ export const TaskDetail = () => {
     due_date: '',
   });
 
-  // Comment State
   const [commentText, setCommentText] = useState('');
   const [commentAuthorId, setCommentAuthorId] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
@@ -44,19 +53,20 @@ export const TaskDetail = () => {
       setError(null);
       const [taskData, usersData] = await Promise.all([getTaskById(id), getUsers()]);
       setTask(taskData);
-      setUsers(usersData);
+      const normalizedUsers = Array.isArray(usersData) ? usersData : [];
+      setUsers(normalizedUsers);
 
       setFormData({
         title: taskData.title,
         description: taskData.description || '',
         status: taskData.status,
         priority: taskData.priority,
-        assignee_id: taskData.assigned_to ? String(taskData.assigned_to) : '',
+        assignee_id: taskData.assignee_id ? String(taskData.assignee_id) : '',
         due_date: taskData.due_date ? taskData.due_date.substring(0, 10) : '',
       });
 
-      if (usersData.length > 0) {
-        setCommentAuthorId(String(usersData[0].id));
+      if (normalizedUsers.length > 0) {
+        setCommentAuthorId(String(normalizedUsers[0].id));
       }
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to load task details');
@@ -66,7 +76,6 @@ export const TaskDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchTaskAndUsers();
   }, [fetchTaskAndUsers]);
 
@@ -76,26 +85,55 @@ export const TaskDetail = () => {
       setSaving(true);
       const updated = await updateTask(id, {
         ...formData,
-        assigned_to: formData.assignee_id ? parseInt(formData.assignee_id, 10) : null,
+        assignee_id: formData.assignee_id ? parseInt(formData.assignee_id, 10) : null,
         due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
       });
       setTask((prev) => ({ ...prev, ...updated }));
-      alert('Task successfully updated');
+      showAlert({
+        icon: 'success',
+        title: 'Task updated',
+        text: 'Your changes were saved successfully.',
+        timer: 1600,
+        showConfirmButton: false,
+      });
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to update task');
+      showAlert({
+        icon: 'error',
+        title: 'Update failed',
+        text: err.response?.data?.detail || 'Failed to update task',
+      });
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteTask = async () => {
-    if (window.confirm('Are you sure you want to delete this task?')) {
-      try {
-        await deleteTask(id);
-        navigate('/tasks');
-      } catch (err) {
-        alert(err.response?.data?.detail || 'Failed to delete task');
-      }
+    const confirmation = await showAlert({
+      icon: 'warning',
+      title: 'Delete this task?',
+      text: 'This action cannot be undone.',
+      showCancelButton: true,
+      confirmButtonText: 'Delete',
+      cancelButtonText: 'Cancel',
+    });
+
+    if (!confirmation.isConfirmed) return;
+
+    try {
+      await deleteTask(id);
+      await showAlert({
+        icon: 'success',
+        title: 'Task deleted',
+        timer: 1200,
+        showConfirmButton: false,
+      });
+      navigate('/tasks');
+    } catch (err) {
+      showAlert({
+        icon: 'error',
+        title: 'Deletion failed',
+        text: err.response?.data?.detail || 'Failed to delete task',
+      });
     }
   };
 
@@ -106,16 +144,26 @@ export const TaskDetail = () => {
     try {
       setSubmittingComment(true);
       const newComment = await addTaskComment(id, {
-        comment: commentText.trim(),
-        user_id: parseInt(commentAuthorId, 10),
+        content: commentText.trim(),
+        author_id: parseInt(commentAuthorId, 10),
       });
       setTask((prev) => ({
         ...prev,
         comments: [newComment, ...(prev.comments || [])],
       }));
       setCommentText('');
+      showAlert({
+        icon: 'success',
+        title: 'Comment added',
+        timer: 1300,
+        showConfirmButton: false,
+      });
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to post comment');
+      showAlert({
+        icon: 'error',
+        title: 'Comment failed',
+        text: err.response?.data?.detail || 'Failed to post comment',
+      });
     } finally {
       setSubmittingComment(false);
     }
@@ -146,13 +194,14 @@ export const TaskDetail = () => {
         >
           <ArrowLeft className="w-4 h-4 mr-1.5" /> Back to Tasks
         </Link>
-        <Button variant="danger" size="sm" onClick={handleDeleteTask}>
-          <Trash2 className="w-4 h-4 mr-1.5" /> Delete Task
-        </Button>
+        {canDeleteTasks && (
+          <Button variant="danger" size="sm" onClick={handleDeleteTask}>
+            <Trash2 className="w-4 h-4 mr-1.5" /> Delete Task
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Details & Edit Column */}
         <div className="lg:col-span-2 space-y-6">
           <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 space-y-6">
             <form onSubmit={handleUpdateTask} className="space-y-4">
@@ -226,13 +275,11 @@ export const TaskDetail = () => {
             </form>
           </div>
 
-          {/* Activity / Comments Stream */}
           <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 space-y-6">
             <h3 className="text-base font-semibold text-slate-100 flex items-center">
               <MessageSquare className="w-4 h-4 mr-2 text-teal-400" /> Task Notes & Comments
             </h3>
 
-            {/* Post Comment Input */}
             <form onSubmit={handleAddComment} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-1">
@@ -257,25 +304,26 @@ export const TaskDetail = () => {
               </div>
             </form>
 
-            <div className="space-y-4 pt-4 border-t border-slate-800">
-              {!task.comments || task.comments.length === 0 ? (
-                <p className="text-xs text-slate-500 text-center py-4">No comments posted yet.</p>
-              ) : (
-                task.comments.map((comment) => (
-                  <div key={comment.id} className="p-4 rounded-lg bg-slate-800/50 border border-slate-800 space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-teal-400">{comment.user?.name || 'Team member'}</span>
-                      <span className="text-slate-500">{new Date(comment.created_at).toLocaleString()}</span>
+            <div className="border-t border-slate-800 pt-4">
+              <div className="comments-scroll max-h-80 space-y-3 overflow-y-auto pr-2">
+                {!Array.isArray(task.comments) || task.comments.length === 0 ? (
+                  <p className="text-xs text-slate-500 text-center py-4">No comments posted yet.</p>
+                ) : (
+                  task.comments.map((comment) => (
+                    <div key={comment.id} className="rounded-lg bg-slate-800/50 border border-slate-800 p-3 space-y-1">
+                      <div className="flex items-center justify-between gap-3 text-xs">
+                        <span className="font-semibold text-teal-400">{comment.author?.name || 'Team member'}</span>
+                        <span className="shrink-0 text-slate-500">{new Date(comment.created_at).toLocaleString()}</span>
+                      </div>
+                      <p className="text-sm text-slate-200 pt-1 wrap-break-word">{comment.content}</p>
                     </div>
-                    <p className="text-sm text-slate-200 pt-1">{comment.comment}</p>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Sidebar Info Card */}
         <div className="space-y-6">
           <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 space-y-4">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400">Metadata</h3>

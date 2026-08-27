@@ -30,8 +30,6 @@ export const Dashboard = () => {
   };
 
   useEffect(() => {
-    // This effect starts an async request; state updates happen when it resolves.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchMetrics();
   }, []);
 
@@ -40,46 +38,41 @@ export const Dashboard = () => {
       title: 'Total Tasks',
       value: metrics?.total_tasks ?? 0,
       icon: Layers,
-      color: 'from-blue-500/20 to-blue-600/5 text-blue-400 border-blue-500/20',
     },
     {
       title: 'Pending',
       value: metrics?.pending_tasks ?? 0,
       icon: Clock,
-      color: 'from-amber-500/20 to-amber-600/5 text-amber-400 border-amber-500/20',
     },
     {
       title: 'In Progress',
       value: metrics?.in_progress_tasks ?? 0,
       icon: RefreshCw,
-      color: 'from-sky-500/20 to-sky-600/5 text-sky-400 border-sky-500/20',
     },
     {
       title: 'Completed',
       value: metrics?.completed_tasks ?? 0,
       icon: CheckCircle2,
-      color: 'from-emerald-500/20 to-emerald-600/5 text-emerald-400 border-emerald-500/20',
     },
     {
       title: 'Blocked',
       value: metrics?.blocked_tasks ?? 0,
       icon: PauseCircle,
-      color: 'from-rose-500/20 to-rose-600/5 text-rose-400 border-rose-500/20',
     },
     {
       title: 'Overdue',
       value: metrics?.overdue_tasks ?? 0,
       icon: AlertTriangle,
-      color: 'from-red-600/30 to-red-700/10 text-red-400 border-red-500/30',
     },
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 text-black dark:text-white">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-100">Project Overview</h1>
-          <p className="text-sm text-slate-400 mt-1">Live metrics and task status aggregation across the workspace.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-black/50 dark:text-white/50">Workspace analytics</p>
+          <h1 className="text-3xl font-bold tracking-tight mt-2">Project Overview</h1>
+          <p className="text-sm text-black/60 dark:text-white/60 mt-2">Live metrics and task status aggregation across the workspace.</p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchMetrics} loading={loading}>
           <RefreshCw className="w-4 h-4 mr-2" /> Refresh Data
@@ -87,8 +80,8 @@ export const Dashboard = () => {
       </div>
 
       {error && (
-        <div className="p-4 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center">
-          <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
+        <div className="p-4 rounded-lg bg-black/5 dark:bg-white/10 border border-black/20 dark:border-white/20 text-black dark:text-white text-sm flex items-center">
+          <AlertCircle className="w-5 h-5 mr-2 shrink-0" />
           <span>{error}</span>
         </div>
       )}
@@ -99,19 +92,22 @@ export const Dashboard = () => {
           return (
             <div
               key={card.title}
-              className={`relative overflow-hidden rounded-xl border bg-gradient-to-br p-6 backdrop-blur-sm ${card.color}`}
+              className="group relative overflow-hidden rounded-2xl border border-black/15 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg dark:border-white/20 dark:bg-black dark:shadow-none"
             >
+              <div className="absolute inset-x-0 top-0 h-1 bg-black dark:bg-white" />
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wider text-slate-400">{card.title}</p>
-                  <p className="mt-2 text-3xl font-extrabold text-slate-100">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-black/50 dark:text-white/50">{card.title}</p>
+                  <p className="mt-2 text-4xl font-extrabold tracking-tight">
                     {loading ? '-' : card.value}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-900/50 border border-white/5">
-                  <Icon className="w-6 h-6" />
+                <div className="rounded-xl border border-black/15 bg-black/5 p-3 dark:border-white/20 dark:bg-white/10">
+                  <Icon className="h-6 w-6" />
                 </div>
               </div>
+              <div className="mt-6 h-px bg-black/10 dark:bg-white/15" />
+              <p className="mt-3 text-xs text-black/50 dark:text-white/50">Updated from live workspace data</p>
             </div>
           );
         })}

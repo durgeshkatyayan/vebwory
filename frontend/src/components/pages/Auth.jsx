@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginUser, registerUser } from '../services/api';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { useAuth } from '../../context/AuthContext';
 
-export default function Auth({ onAuthenticated }) {
+export default function Auth() {
     const [mode, setMode] = useState('login');
     const [form, setForm] = useState({ name: '', email: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { login, register } = useAuth();
 
     const submit = async (event) => {
         event.preventDefault();
@@ -17,22 +18,14 @@ export default function Auth({ onAuthenticated }) {
         setError('');
 
         try {
-            // Payload sanitization based on mode
             const payload = mode === 'login' 
                 ? { email: form.email, password: form.password }
                 : { name: form.name, email: form.email, password: form.password, role: 'member' };
 
-            const data = mode === 'login' 
-                ? await loginUser(payload) 
-                : await registerUser(payload);
+            const data = mode === 'login'
+                ? await login(payload)
+                : await register(payload);
 
-            // Synchronized keys with Axios Interceptor
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-
-            if (onAuthenticated) {
-                onAuthenticated(data.user);
-            }
             navigate('/');
         } catch (err) {
             setError(err.response?.data?.detail || 'Authentication failed');
@@ -57,7 +50,7 @@ export default function Auth({ onAuthenticated }) {
                     <Input
                         label="Full Name"
                         required
-                        placeholder="Alice Vance"
+                        placeholder="Enter your full name"
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                     />
@@ -73,7 +66,7 @@ export default function Auth({ onAuthenticated }) {
                 />
 
                 <Input
-                    label="Password (6+ characters)"
+                    label="Password (5+ characters)"
                     type="password"
                     minLength={6}
                     required

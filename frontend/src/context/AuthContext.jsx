@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser, registerUser } from '../services/api';
+import { loginUser, registerUser } from '../components/services/api';
 
 const AuthContext = createContext(null);
 
@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
     setToken(null);
     setUser(null);
-    window.location.href = '/login';
+    window.location.href = '/auth';
   };
 
   return (

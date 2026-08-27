@@ -11,7 +11,6 @@ router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 def signup(data: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == data.email).first():
         raise HTTPException(status_code=400, detail="Email is already registered")
-    # Public registration can never grant elevated permissions.
     user = User(name=data.name, email=data.email, role="member", password_hash=hash_password(data.password))
     db.add(user); db.commit(); db.refresh(user)
     return {"token": create_token(user), "user": user}

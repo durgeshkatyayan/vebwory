@@ -51,7 +51,7 @@ def get_tasks(
 
 
 @router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
-def create_task(task_data: TaskCreate, db: Session = Depends(get_db), _user = Depends(require_roles("admin", "manager"))):
+def create_task(task_data: TaskCreate, db: Session = Depends(get_db), _user = Depends(require_roles("admin", "manager", "member"))):
     repo = TaskRepository(db)
     return repo.create(task_data)
 

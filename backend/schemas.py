@@ -5,7 +5,6 @@ from typing import Literal
 from models import TaskPriority, TaskStatus
 
 
-# --- User Schemas ---
 class UserBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     email: EmailStr
@@ -32,7 +31,6 @@ class AuthResponse(BaseModel):
     user: UserResponse
 
 
-# --- Comment Schemas ---
 class CommentBase(BaseModel):
     content: str = Field(..., min_length=1)
 
@@ -52,7 +50,6 @@ class CommentResponse(CommentBase):
         from_attributes = True
 
 
-# --- Task Schemas ---
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
@@ -97,7 +94,6 @@ class PaginatedTasksResponse(BaseModel):
     total_pages: int
 
 
-# --- Dashboard Schemas ---
 class DashboardMetrics(BaseModel):
     total_tasks: int
     pending_tasks: int
@@ -107,7 +103,6 @@ class DashboardMetrics(BaseModel):
     overdue_tasks: int
 
 
-# --- External User Schemas ---
 class ExternalUserGeo(BaseModel):
     lat: str
     lng: str

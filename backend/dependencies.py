@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import Depends, HTTPException, status
 from models import User, UserRole
-from dependencies import get_current_user  # Your existing auth dependency
+from dependencies import get_current_user
 
 
 class RoleChecker:
@@ -17,6 +17,5 @@ class RoleChecker:
         return current_user
 
 
-# Pre-defined guard instances
 require_admin_or_manager = RoleChecker([UserRole.ADMIN, UserRole.MANAGER])
 require_admin = RoleChecker([UserRole.ADMIN])

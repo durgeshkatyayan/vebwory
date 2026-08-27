@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import { 
   Plus, 
   Search, 
@@ -11,24 +12,32 @@ import {
   User,
 } from 'lucide-react';
 import { getTasks, createTask, deleteTask, getUsers } from '../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Select';
 import { Modal } from '../ui/Modal';
 import { PriorityBadge, StatusBadge } from '../ui/PriorityBadge';
 
+const showAlert = (options) => Swal.fire({
+  background: document.documentElement.classList.contains('dark') ? '#000000' : '#ffffff',
+  color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+  confirmButtonColor: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+  ...options,
+});
+
 export const TaskList = () => {
+  const { user } = useAuth();
+  const canDeleteTasks = user?.role === 'admin';
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, total_pages: 1, total: 0 });
 
-  // Filters
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
   const [assigneeFilter, setAssigneeFilter] = useState('');
 
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [newTask, setNewTask] = useState({
@@ -54,18 +63,18 @@ export const TaskList = () => {
       setLoading(true);
       const params = {
         page: pagination.page,
-        limit: 10,
+        page_size: 10,
         ...(search && { search }),
         ...(statusFilter && { status: statusFilter }),
         ...(priorityFilter && { priority: priorityFilter }),
-        ...(assigneeFilter && { assignee: parseInt(assigneeFilter, 10) }),
+        ...(assigneeFilter && { assignee_id: parseInt(assigneeFilter, 10) }),
       };
       const res = await getTasks(params);
-      setTasks(res.tasks);
+      setTasks(Array.isArray(res?.items) ? res.items : []);
       setPagination({
-        page: res.page,
-        total_pages: Math.max(1, Math.ceil(res.total / res.limit)),
-        total: res.total,
+        page: res?.page ?? 1,
+        total_pages: Math.max(1, res?.total_pages ?? 1),
+        total: res?.total ?? 0,
       });
     } catch (err) {
       console.error('Error fetching tasks:', err);
@@ -75,12 +84,10 @@ export const TaskList = () => {
   }, [pagination.page, search, statusFilter, priorityFilter, assigneeFilter]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUsersList();
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchTasksList();
   }, [fetchTasksList]);
 
@@ -90,7 +97,7 @@ export const TaskList = () => {
       setSubmitting(true);
       await createTask({
         ...newTask,
-        assigned_to: newTask.assignee_id ? parseInt(newTask.assignee_id, 10) : null,
+        assignee_id: newTask.assignee_id ? parseInt(newTask.assignee_id, 10) : null,
         due_date: newTask.due_date ? new Date(newTask.due_date).toISOString() : null,
       });
       setIsModalOpen(false);
@@ -103,8 +110,19 @@ export const TaskList = () => {
         assignee_id: '',
       });
       fetchTasksList();
+      await showAlert({
+        icon: 'success',
+        title: 'Task created',
+        text: 'The new task was added successfully.',
+        timer: 1600,
+        showConfirmButton: false,
+      });
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to create task');
+      showAlert({
+        icon: 'error',
+        title: 'Creation failed',
+        text: err.response?.data?.detail || 'Failed to create task',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -112,13 +130,32 @@ export const TaskList = () => {
 
   const handleDeleteTask = async (taskId, e) => {
     e.preventDefault();
-    if (window.confirm('Are you sure you want to delete this task?')) {
-      try {
-        await deleteTask(taskId);
-        fetchTasksList();
-      } catch (err) {
-        alert(err.response?.data?.detail || 'Failed to delete task');
-      }
+    const confirmation = await showAlert({
+      icon: 'warning',
+      title: 'Delete this task?',
+      text: 'This action cannot be undone.',
+      showCancelButton: true,
+      confirmButtonText: 'Delete',
+      cancelButtonText: 'Cancel',
+    });
+
+    if (!confirmation.isConfirmed) return;
+
+    try {
+      await deleteTask(taskId);
+      fetchTasksList();
+      showAlert({
+        icon: 'success',
+        title: 'Task deleted',
+        timer: 1400,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      showAlert({
+        icon: 'error',
+        title: 'Deletion failed',
+        text: err.response?.data?.detail || 'Failed to delete task',
+      });
     }
   };
 
@@ -134,7 +171,6 @@ export const TaskList = () => {
         </Button>
       </div>
 
-      {/* Filter and Search Bar */}
       <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
@@ -185,7 +221,6 @@ export const TaskList = () => {
         </select>
       </div>
 
-      {/* Task Table */}
       <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-300">
@@ -262,12 +297,15 @@ export const TaskList = () => {
                         >
                           <ExternalLink className="w-4 h-4" />
                         </Link>
-                        <button
-                          onClick={(e) => handleDeleteTask(task.id, e)}
-                          className="p-1.5 text-slate-400 hover:text-rose-400 rounded-md hover:bg-slate-800 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canDeleteTasks && (
+                          <button
+                            onClick={(e) => handleDeleteTask(task.id, e)}
+                            className="p-1.5 text-slate-400 hover:text-rose-400 rounded-md hover:bg-slate-800 transition-colors"
+                            aria-label="Delete task"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -277,7 +315,6 @@ export const TaskList = () => {
           </table>
         </div>
 
-        {/* Pagination Bar */}
         <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
           <span>
             Showing page {pagination.page} of {pagination.total_pages} ({pagination.total} total)
@@ -303,7 +340,6 @@ export const TaskList = () => {
         </div>
       </div>
 
-      {/* Task Creation Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New Task">
         <form onSubmit={handleCreateSubmit} className="space-y-4">
           <Input

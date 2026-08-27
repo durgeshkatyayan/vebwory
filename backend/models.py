@@ -4,12 +4,10 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from database import Base
 
-
 class UserRole(str, enum.Enum):
     ADMIN = "admin"
     MANAGER = "manager"
     MEMBER = "member"
-
 
 class TaskPriority(str, enum.Enum):
     LOW = "Low"
@@ -17,13 +15,11 @@ class TaskPriority(str, enum.Enum):
     HIGH = "High"
     URGENT = "Urgent"
 
-
 class TaskStatus(str, enum.Enum):
     PENDING = "Pending"
     IN_PROGRESS = "In Progress"
     COMPLETED = "Completed"
     BLOCKED = "Blocked"
-
 
 class User(Base):
     __tablename__ = "users"
@@ -37,7 +33,6 @@ class User(Base):
 
     tasks = relationship("Task", back_populates="assignee")
     comments = relationship("Comment", back_populates="author", cascade="all, delete-orphan")
-
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -60,7 +55,6 @@ class Task(Base):
         cascade="all, delete-orphan",
         order_by="desc(Comment.created_at)"
     )
-
 
 class Comment(Base):
     __tablename__ = "comments"

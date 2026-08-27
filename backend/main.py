@@ -23,7 +23,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Route Registrations
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(tasks.router)
@@ -36,7 +35,6 @@ def init_mock_data():
     db = SessionLocal()
     try:
         if db.query(User).count() == 0:
-            # Seed users with default password 'password123'
             default_hashed_pwd = hash_password("password123")
             
             admin_user = User(

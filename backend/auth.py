@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import User
 
-SECRET = os.getenv("AUTH_SECRET", "change-this-development-secret")
+SECRET = os.getenv("AUTH_SECRET")
 bearer = HTTPBearer(auto_error=False)
 
 def hash_password(password: str) -> str:

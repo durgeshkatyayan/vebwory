@@ -9,7 +9,6 @@ const apiClient = axios.create({
   },
 });
 
-// Request Interceptor: Attach JWT token if present in localStorage
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -21,16 +20,14 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Handle 401 Unauthorized globally
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // Only redirect if not already on the login/register page
-      if (!['/login', '/register'].includes(window.location.pathname)) {
-        window.location.href = '/login';
+      if (!['/auth', '/login', '/register'].includes(window.location.pathname)) {
+        window.location.href = '/auth';
       }
     }
     return Promise.reject(error);
@@ -39,6 +36,8 @@ apiClient.interceptors.response.use(
 
 export const login = async (credentials) => (await apiClient.post('/auth/login', credentials)).data;
 export const signup = async (details) => (await apiClient.post('/auth/signup', details)).data;
+export const loginUser = login;
+export const registerUser = signup;
 
 export const getDashboardMetrics = async () => {
   const response = await apiClient.get('/dashboard');
@@ -82,6 +81,13 @@ export const getUsers = async () => {
 
 export const getExternalUsers = async () => {
   const response = await apiClient.get('/external/users');
+  return response.data;
+};
+
+export const getExternalPhotos = async (page = 1, limit = 24) => {
+  const response = await axios.get('https://jsonplaceholder.typicode.com/photos', {
+    params: { _page: page, _limit: limit },
+  });
   return response.data;
 };
 
