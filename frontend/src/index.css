@@ -12,8 +12,8 @@ body {
 }
 
 html.dark body { background-color: #000; color: #fff; }
-html.dark input, html.dark textarea, html.dark select { background-color: #000 !important; color: #fff !important; border-color: #fff !important; }
-html:not(.dark) input, html:not(.dark) textarea, html:not(.dark) select { background-color: #fff !important; color: #000 !important; border-color: #000 !important; }
+html.dark input, html.dark textarea, html.dark select { background-color: #000 !important; color: #fff !important; border-color: rgba(148, 163, 184, 0.35) !important; }
+html:not(.dark) input, html:not(.dark) textarea, html:not(.dark) select { background-color: #fff !important; color: #000 !important; border-color: rgba(51, 65, 85, 0.2) !important; }
 
 * {
   scrollbar-width: thin;
@@ -54,5 +54,5 @@ html:not(.dark) [class*="bg-slate"], html:not(.dark) [class*="bg-teal"], html:no
 html.dark [class*="bg-slate"], html.dark [class*="bg-teal"], html.dark [class*="bg-rose"], html.dark [class*="bg-blue"], html.dark [class*="bg-amber"], html.dark [class*="bg-red"], html.dark [class*="bg-emerald"], html.dark [class*="bg-sky"] { background-color: #000 !important; background-image: none !important; }
 html:not(.dark) [class*="text-slate"], html:not(.dark) [class*="text-teal"], html:not(.dark) [class*="text-rose"], html:not(.dark) [class*="text-blue"], html:not(.dark) [class*="text-amber"], html:not(.dark) [class*="text-red"], html:not(.dark) [class*="text-emerald"], html:not(.dark) [class*="text-sky"] { color: #000 !important; }
 html.dark [class*="text-slate"], html.dark [class*="text-teal"], html.dark [class*="text-rose"], html.dark [class*="text-blue"], html.dark [class*="text-amber"], html.dark [class*="text-red"], html.dark [class*="text-emerald"], html.dark [class*="text-sky"] { color: #fff !important; }
-html:not(.dark) [class*="border-slate"], html:not(.dark) [class*="border-teal"], html:not(.dark) [class*="border-rose"] { border-color: #000 !important; }
-html.dark [class*="border-slate"], html.dark [class*="border-teal"], html.dark [class*="border-rose"] { border-color: #fff !important; }
+html:not(.dark) [class*="border-slate"], html:not(.dark) [class*="border-teal"], html:not(.dark) [class*="border-rose"] { border-color: rgba(51, 65, 85, 0.2) !important; }
+html.dark [class*="border-slate"], html.dark [class*="border-teal"], html.dark [class*="border-rose"] { border-color: rgba(148, 163, 184, 0.35) !important; }
